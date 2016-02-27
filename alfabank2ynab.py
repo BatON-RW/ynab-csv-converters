@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # coding: utf-8
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -12,6 +13,7 @@ import csv
 import datetime
 import sys
 import decimal
+import os
 
 
 def define_ynab_category(category):
@@ -39,7 +41,14 @@ def parse_row(row):
     return [y_date, y_payee, y_category, y_memo, y_out, y_in]
 
 
-with open(sys.argv[1], 'r', encoding='utf-8') as csvin, open("ynab-%s" % (sys.argv[1], ), 'w', encoding='utf-8') as csvout:
+def build_output_filename(path):
+    _path = path.split(os.sep)
+    if len(_path) == 0:
+        raise Exception('ERROR: Invalid file path format!')
+
+    return os.sep.join(_path[:-1] + ["ynab-%s" % _path[-1]])
+
+with open(sys.argv[1], 'r', encoding='utf-8') as csvin, open(build_output_filename(sys.argv[1]), 'w', encoding='utf-8') as csvout:
     reader = csv.reader(csvin, delimiter=';', quotechar='"')
     writer = csv.writer(csvout, delimiter=',', quotechar='"', lineterminator='\n')
 
