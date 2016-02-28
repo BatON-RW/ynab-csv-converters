@@ -11,18 +11,25 @@
 
 import csv
 import datetime
-import sys
 import decimal
 import json
 import os
+import argparse
+
+DEFAULT_CATEGORIES_FILE = os.path.dirname(os.path.realpath(__file__)) + os.sep + 'categories.json'
+DEFAULT_BANK_IN_FILE = 'tinkoff.csv'
+DEFAULT_BANK_OUT_FILE = 'yanb-' + DEFAULT_BANK_IN_FILE
+
+parser = argparse.ArgumentParser(description="CSV converter from tinkoff data format to ynab.")
+parser.add_argument('-c', '--categories', type=str, default=DEFAULT_CATEGORIES_FILE, help="path to categories dictionary file")
+parser.add_argument('-i', '--csv_file_in', type=str, default=DEFAULT_BANK_IN_FILE, help="path to input CSV file")
+parser.add_argument('-o', '--csv_file_out', type=str, default=DEFAULT_BANK_OUT_FILE, help="path to output CSV file")
+args = parser.parse_args()
 
 
 def define_ynab_category(category):
-    def _get_script_path():
-        return os.path.dirname(os.path.realpath(__file__))
     try:
-        dict_file = _get_script_path() + os.sep + 'categories.json' if len(sys.argv) != 3 else sys.argv[2]
-        with open(dict_file, 'r', encoding='utf-8') as categories:
+        with open(args.categories, 'r', encoding='utf-8') as categories:
             dictionary = json.load(categories)
     except Exception as err:
         print('ERROR: %s' % err)
@@ -53,18 +60,14 @@ def parse_row(row):
     return [y_date, y_payee, y_category, y_memo, y_out, y_in]
 
 
-def build_output_filename(path):
-    _path = path.split(os.sep)
-    if len(_path) == 0:
-        raise Exception('ERROR: Invalid file path format!')
+try:
+    with open(args.csv_file_in, 'r', encoding='cp1251') as csvin, open(args.csv_file_out, 'w', encoding='utf-8') as csvout:
+        reader = csv.reader(csvin, delimiter=';', quotechar='"')
+        writer = csv.writer(csvout, delimiter=',', quotechar='"', lineterminator='\n')
 
-    return os.sep.join(_path[:-1] + ["ynab-%s" % _path[-1]])
+        writer.writerow(['Date', 'Payee', 'Category', 'Memo', 'Outflow', 'Inflow'])
 
-with open(sys.argv[1], 'r', encoding='cp1251') as csvin, open(build_output_filename(sys.argv[1]), 'w', encoding='utf-8') as csvout:
-    reader = csv.reader(csvin, delimiter=';', quotechar='"')
-    writer = csv.writer(csvout, delimiter=',', quotechar='"', lineterminator='\n')
-
-    writer.writerow(['Date', 'Payee', 'Category', 'Memo', 'Outflow', 'Inflow'])
-
-    for row in reader:
-        writer.writerow(parse_row(row))
+        for row in reader:
+            writer.writerow(parse_row(row))
+except Exception as er:
+    print('ERROR: %s' % er)
