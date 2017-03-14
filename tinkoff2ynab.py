@@ -53,8 +53,8 @@ def parse_amount(amount):
 def parse_row(row):
     y_date = parse_date(row[0])
     y_in, y_out = parse_amount(row[6])
-    y_payee = row[10]
-    y_category = define_ynab_category(row[8])
+    y_payee = row[11]
+    y_category = define_ynab_category(row[9])
     y_memo = ''
 
     return [y_date, y_payee, y_category, y_memo, y_out, y_in]
@@ -67,6 +67,7 @@ try:
 
         writer.writerow(['Date', 'Payee', 'Category', 'Memo', 'Outflow', 'Inflow'])
 
+        next(reader, None) # skip a header
         for row in reader:
             writer.writerow(parse_row(row))
 except Exception as er:
